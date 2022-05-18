@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"geego/cache"
 	"geego/gee"
 	"log"
 	"net/http"
@@ -17,6 +18,12 @@ func onlyForV2() gee.HandlerFunc {
 		// Calculate resolution time
 		log.Printf("[%d] %s in %v for group v2", c.StatusCode, c.Req.RequestURI, time.Since(t))
 	}
+}
+
+var db = map[string]string{
+	"Tom":  "630",
+	"Jack": "589",
+	"Sam":  "567",
 }
 
 func main() {
@@ -61,6 +68,36 @@ func main() {
 	})
 	r.Use(gee.Recovery())
 	fmt.Println("Welcome to Gee-go!")
+
+	r.GET("/cache/:group/:key", func(c *gee.Context) {
+		groupName := c.Params["group"]
+		key := c.Params["key"]
+
+		group := cache.GetGroup(groupName)
+
+		if group == nil {
+			c.Fail(http.StatusNotFound, "no such group"+groupName)
+		}
+
+		view, err := group.Get(key)
+		if err != nil {
+			c.Fail(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		c.SetHeader("Content-Type", "application/octet-stream")
+		c.Data(http.StatusOK, view.ByteSlice())
+
+	})
+
+	cache.NewGroup("socers", 2<<10, cache.GetterFunc(
+		func(key string) ([]byte, error) {
+			log.Println("[SlowDB] search key", key)
+			if v, ok := db[key]; ok {
+				return []byte(v), nil
+			}
+			return nil, fmt.Errorf("%s not exist", key)
+		}))
 
 	r.Run(":9999")
 
