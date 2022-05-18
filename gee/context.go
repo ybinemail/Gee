@@ -22,6 +22,10 @@ type Context struct {
 
 	//params
 	Params map[string]string
+
+	//middleware
+	handlers []HandlerFunc
+	index    int
 }
 
 // construct new context
@@ -31,6 +35,16 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 		Req:    r,
 		Path:   r.URL.Path,
 		Methon: r.Method,
+		index:  -1,
+	}
+}
+
+func (c *Context) Next() {
+	c.index++
+	handlerCount := len(c.handlers)
+	for ; c.index < handlerCount; c.index++ {
+		// do HandlerFunc func
+		c.handlers[c.index](c)
 	}
 }
 
@@ -61,7 +75,12 @@ func (c *Context) JSON(code int, obj interface{}) {
 	if err := encoder.Encode(obj); err != nil {
 		http.Error(c.Writer, err.Error(), 500)
 	}
-	//todo json
+	//TODO json
+}
+
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.JSON(code, H{"message": err})
 }
 
 //set data

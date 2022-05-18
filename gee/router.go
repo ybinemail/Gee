@@ -74,10 +74,13 @@ func (r *router) handler(c *Context) {
 	n, params := r.getRouter(c.Methon, c.Path)
 	if n != nil {
 		c.Params = params
-		key := c.Methon + "_" + n.pattern
-		//todo
-		r.handlers[key](c)
+		key := c.Methon + "-" + n.pattern
+		//do define HandlerFunc func
+		c.handlers = append(c.handlers, r.handlers[key])
 	} else {
-		c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		c.handlers = append(c.handlers, func(c *Context) {
+			c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		})
 	}
+	c.Next()
 }
