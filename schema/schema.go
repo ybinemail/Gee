@@ -1,6 +1,9 @@
 package schema
 
-import "geego/dialect"
+import (
+	"geego/dialect"
+	"reflect"
+)
 
 type Filed struct {
 	Name string
@@ -23,5 +26,12 @@ func (schema *Schema) GetField(name string) *Filed {
 }
 
 func Parse(dest interface{}, d dialect.Dialect) *Schema {
+	modelType := reflect.Indirect(reflect.ValueOf(dest)).Type()
+
+	schema := &Schema{
+		Model:    dest,
+		Name:     modelType.Name(),
+		filedMap: make(map[string]*Filed),
+	}
 
 }
