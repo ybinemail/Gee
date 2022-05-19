@@ -1,10 +1,10 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"geego/cache"
 	"geego/gee"
+	"geego/orm"
 	"log"
 	"net/http"
 	"time"
@@ -106,28 +106,17 @@ func main() {
 }
 
 func demoGeeORM() {
-	db, _ := sql.Open("sqlite3", "gee.db")
+	engine, _ := orm.NewEngine("sqlite3", "gee.db")
+	defer engine.Close()
 
-	defer func() {
-		_ = db.Close()
-	}()
+	s := engine.NewSession()
+	_, _ = s.Raw("DROP TABLE IF EXISTS User;").Exec()
+	_, _ = s.Raw("CREATE TABLE User(Name text);").Exec()
+	_, _ = s.Raw("CREATE TABLE User(Name text);").Exec()
 
-	_, _ = db.Exec("drop table if exists user;")
-	_, _ = db.Exec("CREATE TABLE User(Name text);")
-
-	result, err := db.Exec("insert into user('name') values(?),(?)", "Tom", "Sam")
-
-	if err == nil {
-		affected, _ := result.RowsAffected()
-		log.Println(affected)
-	}
-
-	row := db.QueryRow("select name from user limit 1")
-	var name string
-	if er := row.Scan(&name); er == nil {
-		log.Println(name)
-	}
-
+	result, _ := s.Raw("INSERT INTO User(`Name`) values (?), (?)", "Tom", "Sam").Exec()
+	count, _ := result.RowsAffected()
+	fmt.Printf("Exec success, %d affected\n", count)
 }
 
 func createGroup() *cache.Group {
