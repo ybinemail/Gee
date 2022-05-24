@@ -100,9 +100,7 @@ func main() {
 		}
 		startCacheServer(addrMap[port], []string(addrs), gee)
 	*/
-
 	demoGeeORM()
-
 }
 
 func demoGeeORM() {
